@@ -1,0 +1,207 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Hexo Manage</title>
+  <style>
+    input,button {
+      margin: 0 10px 0 10px;
+    }
+
+    form, font {
+      width: 100%;
+      min-height: 25px;
+      line-height: 25px;
+      text-align: center;
+      border-collapse: collapse;
+      font-size: 18px;
+    }
+
+    table,tr,td,tbody,th {
+      border: 3px solid black;
+    }
+
+    table,thead {
+      min-height: 25px;
+      line-height: 25px;
+      text-align: center;
+      border: 1px solid black;
+      border-collapse: collapse; 
+			width: 100%; 
+      font-size: 15px;
+    }
+
+  </style>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.0/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery.form/4.2.2/jquery.form.min.js"></script>
+    <script src="/static/fontSize.js"></script>
+    <script src="/static/wcPop.js"></script>
+    <script type="text/javascript">
+      var files = JSON.stringify();
+      function createTable(data) {
+          // console.log("造表");
+          var table = document.getElementById("file_list");
+          if (table) {
+            $("table").remove();
+          }
+          document.getElementById("display").innerHTML = "刷新";
+          var table = document.createElement("table");
+          table.setAttribute("id", "file_list");
+          var trNode = table.insertRow();
+          var tCaption = table.createCaption();
+          tCaption.innerHTML = "文件列表";
+          var title = new Array("文件名", "title", "发布时间", "更新时间", "操作");
+          var r = title.length;
+          var tHead = table.createTHead();
+          for (i = 0; i < r; i++) {
+            var th = document.createElement("th");;
+            th.innerHTML = title[i];
+            tHead.appendChild(th);
+          }
+  
+          for ( i = 0; i < data.length; i++) {
+            trNode = table.insertRow();
+            for (j = 0; j < title.length-1; j++) {
+              var tdNode = trNode.insertCell();
+              tdNode.innerHTML = data[i][j];
+            }
+            var button_download = document.createElement("button");
+            button_download.setAttribute("id", data[i][0]);
+            button_download.setAttribute("type", "button");
+            button_download.setAttribute("onclick", "download(id)");
+            button_download.innerHTML = "下载";
+            var button_del = document.createElement("button");
+            button_del.setAttribute("id", data[i][0]);
+            button_del.setAttribute("type", "button");
+            button_del.setAttribute("onclick", "del(id)");
+            button_del.innerHTML = "删除";
+            var tdNode = trNode.insertCell();
+            tdNode.appendChild(button_download);
+            tdNode.appendChild(button_del);
+          }
+          document.body.appendChild(table);
+      };
+
+      function getfiles() {
+        $.ajax({
+          url: '/getfiles',
+          type: 'POST',
+          data: JSON.stringify({
+            "token": document.getElementById("token").value
+          }),
+          contentType: 'application/json; charset=UTF-8',
+          processData: false,
+          success: function (data) {
+            if (data.status == "Success" && files != data["files"].toString()) {
+              createTable(data["files"]);
+              files = data["files"].toString();
+            }else if (data.status == "Success") {
+              console.log("数据相同");
+            }else {
+              alert("无效的token");
+            }
+          },
+          error: function (data) {
+            alert("无效的token");
+          }
+        });
+      }
+  
+      function doUpload() {
+        var formData = new FormData($("#uploadForm")[0]);
+        $.ajax({
+          url: '/upload',
+          type: 'POST',
+          dataType: "json",
+          data: formData,
+          async: false,
+          cache: false,
+          contentType: false,
+          processData: false,
+          success: function (data) {
+            msg(data.msg);
+            var d = document.getElementById("display");
+            if (data.status == "Success"){
+              d.onclick();
+            }
+          },
+          error: function (data) {
+            console.log(data);
+          }
+        });
+      }
+
+      function download(filename) {
+          document.getElementById("d_token").value = document.getElementById("token").value;
+          document.getElementById("d_filename").value = filename;
+          var options = {
+            success: function (data) {
+              if (typeof(data) === "string") {
+                var f = document.getElementById("download");
+                f.submit();
+              } else {
+                alert(data.msg);
+              }
+            }
+          }
+          $("#download").ajaxSubmit(options);
+    }
+
+
+    function del(filename) {
+        var formData = new FormData($("#uploadForm")[0]);
+        $.ajax({
+          url: '/delete',
+          type: 'POST',
+          dataType: "json",
+          data: JSON.stringify({
+            "token": document.getElementById("token").value,
+            "filename": filename
+          }),
+          contentType: 'application/json; charset=UTF-8',
+          processData: false,
+          success: function (data) {
+            msg(data.msg);
+            var d = document.getElementById("display");
+            if (data.status == "Success"){
+              d.onclick();
+            }
+          },
+          error: function (data) {
+            console.log(data);
+          }
+        });
+      }
+
+      function msg(msg){
+			wcPop({
+				anim: 'fadeIn',
+				content: msg,
+				shade: true,
+				shadeClose: false,
+				time: 2
+			});
+		}
+    </script>
+</head>
+
+<body>
+
+
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input id="file" type="file" name="file" accept=".md,.markdown"/>
+    <button id="upload" type="button" onclick="doUpload()">上传</button>
+    <button id="display" type="button" onclick="getfiles()">显示文件列表</button>
+    token:<input id="token" type="password" name="token" value=""></input>
+  </form>
+
+  <form id="download" method="POST" style="display:none" action="/download"  target="_blank">
+    <input id="d_token" type="text" name="token" value=""/>
+    <input id="d_filename" type="text" name="filename" value=""/>
+  </form>
+
+
+</body>
+
+</html>

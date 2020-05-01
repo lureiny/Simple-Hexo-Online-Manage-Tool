@@ -1,0 +1,19 @@
+ {   
+    "post_path": "post_path",
+    "deploy_cmd": "command",
+    "front_matters": ["date", "tags", "comments", "title", "categories", "layout", "updated", "permalink", "keywords"],
+    "remote_git": "https://github.com",
+    "local_git_path": "local_git_path",
+    "auto_git": true,
+    "timer": 60.0,
+    "webhook_used": true,
+    "webhook_secret": "key",
+    "request_log": "./log/request.log",
+    "custom_log": "./log/custom.log",
+    "system_log":  "./log/system.log",
+    "extends": {},
+    "markdown_file_class": "Markdown_File",
+    "token": "pwd",
+    "bind": "0.0.0.0",
+    "port": 5000
+ }
