@@ -99,11 +99,11 @@
             }else if (data.status == "Success") {
               console.log("数据相同");
             }else {
-              alert("无效的token");
+              msg("无效的token");
             }
           },
           error: function (data) {
-            alert("无效的token");
+            msg("无效的token");
           }
         });
       }
@@ -141,7 +141,7 @@
                 var f = document.getElementById("download");
                 f.submit();
               } else {
-                alert(data.msg);
+                msg(data.msg);
               }
             }
           }
