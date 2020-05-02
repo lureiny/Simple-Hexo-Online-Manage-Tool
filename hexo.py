@@ -198,6 +198,7 @@ def delete():
     else:
         m = Manage(POST_PATH)
         s, msg = m.del_file(filename=data["filename"], local_git_path=LOCAL_GIT_PATH)
+        threading.Thread(target=deploy, args=[]).start()
         if s:
             status["status"] = "Success"
             status["msg"] = msg
