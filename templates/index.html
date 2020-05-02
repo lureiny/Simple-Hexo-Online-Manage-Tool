@@ -40,7 +40,6 @@
     <script type="text/javascript">
       var files = JSON.stringify();
       function createTable(data) {
-          // console.log("造表");
           var table = document.getElementById("file_list");
           if (table) {
             $("table").remove();
@@ -191,9 +190,12 @@
 
   <form id="uploadForm" enctype="multipart/form-data">
     <input id="file" type="file" name="file" accept=".md,.markdown"/>
-    <button id="upload" type="button" onclick="doUpload()">上传</button>
+    <button id="upload" type="button" onclick="doUpload()">上传文件</button>
     <button id="display" type="button" onclick="getfiles()">显示文件列表</button>
     token:<input id="token" type="password" name="token" value=""></input>
+    {% if blog %}
+    <a href={{blog}}>Blog</a>
+    {% endif %}
   </form>
 
   <form id="download" method="POST" style="display:none" action="/download"  target="_blank">

@@ -18,6 +18,7 @@ ALLOWED_EXTENSIONS = {'md', 'markdown'}
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
+app.templates_auto_reload = True
 
 # 读取配置信息
 with open("config.json", encoding="utf-8") as file:
@@ -40,6 +41,7 @@ with open("config.json", encoding="utf-8") as file:
     TOKEN = md5(data["token"].encode("utf-8")).hexdigest()
     BIND = data["bind"]
     PORT = data["port"]
+    BLOG_URL = data["blog_url"]
 
 
 # flask请求日志
@@ -90,7 +92,7 @@ def token_verify(token: str):
 
 @app.route("/", methods=["GET"])
 def index():
-    return render_template("index.html")
+    return render_template("index.html", blog=BLOG_URL)
 
 # 上传主程序
 @app.route("/upload", methods=["POST"])

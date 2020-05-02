@@ -15,5 +15,6 @@
     "markdown_file_class": "Markdown_File",
     "token": "pwd",
     "bind": "0.0.0.0",
-    "port": 5000
+    "port": 5000,
+    "blog_url": ""
  }
