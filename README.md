@@ -1,6 +1,39 @@
 # 简单Hexo在线管理工具（Simple-Hexo-Online-Manage-Tool）
 
-[toc]
+- [简单Hexo在线管理工具（Simple-Hexo-Online-Manage-Tool）](#%e7%ae%80%e5%8d%95hexo%e5%9c%a8%e7%ba%bf%e7%ae%a1%e7%90%86%e5%b7%a5%e5%85%b7simple-hexo-online-manage-tool)
+  - [1. Hexo](#1-hexo)
+  - [2. 接口设计](#2-%e6%8e%a5%e5%8f%a3%e8%ae%be%e8%ae%a1)
+    - [2.1 设计思路](#21-%e8%ae%be%e8%ae%a1%e6%80%9d%e8%b7%af)
+    - [2.2 HTTP API](#22-http-api)
+      - [2.2.1 /](#221)
+      - [2.2.2 upload](#222-upload)
+      - [2.2.3 webhook](#223-webhook)
+      - [2.2.4 getfiles](#224-getfiles)
+      - [2.2.5 download](#225-download)
+      - [2.2.6 delete](#226-delete)
+  - [3. 配置文件](#3-%e9%85%8d%e7%bd%ae%e6%96%87%e4%bb%b6)
+  - [4. 使用方法](#4-%e4%bd%bf%e7%94%a8%e6%96%b9%e6%b3%95)
+    - [4.1 准备工作](#41-%e5%87%86%e5%a4%87%e5%b7%a5%e4%bd%9c)
+    - [4.2 环境配置](#42-%e7%8e%af%e5%a2%83%e9%85%8d%e7%bd%ae)
+      - [4.2.1 不使用docker](#421-%e4%b8%8d%e4%bd%bf%e7%94%a8docker)
+        - [4.2.1.1 Hexo](#4211-hexo)
+        - [4.2.1.2 配置git-ssh](#4212-%e9%85%8d%e7%bd%aegit-ssh)
+        - [4.2.1.3 创建并拉取git备份仓库](#4213-%e5%88%9b%e5%bb%ba%e5%b9%b6%e6%8b%89%e5%8f%96git%e5%a4%87%e4%bb%bd%e4%bb%93%e5%ba%93)
+        - [4.2.1.4 配置python环境](#4214-%e9%85%8d%e7%bd%aepython%e7%8e%af%e5%a2%83)
+        - [4.2.1.5 安装screen](#4215-%e5%ae%89%e8%a3%85screen)
+        - [4.2.1.6 使用Simple-Hexo-Online-Manage-Tool](#4216-%e4%bd%bf%e7%94%a8simple-hexo-online-manage-tool)
+        - [4.2.1.7 访问](#4217-%e8%ae%bf%e9%97%ae)
+        - [4.2.1.8 配置webhook](#4218-%e9%85%8d%e7%bd%aewebhook)
+      - [4.2.2 使用docker](#422-%e4%bd%bf%e7%94%a8docker)
+        - [4.2.2.1 配置git-ssh](#4221-%e9%85%8d%e7%bd%aegit-ssh)
+        - [4.2.2.2 文件目录准备工作](#4222-%e6%96%87%e4%bb%b6%e7%9b%ae%e5%bd%95%e5%87%86%e5%a4%87%e5%b7%a5%e4%bd%9c)
+        - [4.2.2.3 配置docker](#4223-%e9%85%8d%e7%bd%aedocker)
+        - [4.2.2.4 修改docker-compose配置文件](#4224-%e4%bf%ae%e6%94%b9docker-compose%e9%85%8d%e7%bd%ae%e6%96%87%e4%bb%b6)
+        - [4.2.2.5 修改shomt配置文件](#4225-%e4%bf%ae%e6%94%b9shomt%e9%85%8d%e7%bd%ae%e6%96%87%e4%bb%b6)
+        - [4.2.2.6 启动docker](#4226-%e5%90%af%e5%8a%a8docker)
+        - [4.2.1.7 访问](#4217-%e8%ae%bf%e9%97%ae-1)
+        - [4.2.1.8 配置webhook](#4218-%e9%85%8d%e7%bd%aewebhook-1)
+  - [5. 扩展/自定义](#5-%e6%89%a9%e5%b1%95%e8%87%aa%e5%ae%9a%e4%b9%89)
 
 ## 1. Hexo
 [Hexo][4]作为一款优秀的静态博客广受好评。网上大多数的教程都是基于Hexo+Github Page来写的。这种模式有很多优点，但对我来说也有一些缺点。
@@ -150,8 +183,8 @@
 | request_log | 网络请求日志文件 | `str` | 默认值如上 |
 | custom_log | 自定义输出日志文件 | `str` | 默认值如上 |
 | system_log | 系统输出日志文件 | `str` | 默认值如上 |
-| extends | 自定义Markdown_File方法时需要的额外参数，详见[扩展OR自定义](#扩展OR自定义) | `dict` | 默认值如上 |
-| markdown_file_class | 处理markdown文件使用的类，可自定义，详见[扩展OR自定义](#扩展OR自定义) | `str` | `Markdown_File` |
+| extends | 自定义Markdown_File方法时需要的额外参数，详见[扩展/自定义](#5-%e6%89%a9%e5%b1%95%e8%87%aa%e5%ae%9a%e4%b9%89) | `dict` | 默认值如上 |
+| markdown_file_class | 处理markdown文件使用的类，可自定义，详见[扩展/自定义](#5-%e6%89%a9%e5%b1%95%e8%87%aa%e5%ae%9a%e4%b9%89) | `str` | `Markdown_File` |
 | token | 在线管理文件：上传、查看、下载、删除时的身份验证信息 | `str` | 默认值如上，强烈建议修改 |
 | bind | flask监听地址 | `str` | `0.0.0.0` |
 | port | flask监听端口 | `int` | `5000` |
@@ -171,8 +204,8 @@
 
 #### 4.2.1 不使用docker
 ##### 4.2.1.1 Hexo
-按照[官方](6)的教程进行安装：
-安装Node.js环境，可以参考：[nodesource](7)
+按照[官方][6]的教程进行安装：
+安装Node.js环境，可以参考：[nodesource][7]
 ```shell
     # 这里如果安装最新的14.x会导致hexo出错
     curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
@@ -191,7 +224,7 @@
 ```
 
 ##### 4.2.1.2 配置git-ssh
-这部分可以参考[掘金](8)上的帖子。
+这部分可以参考[掘金][8]上的帖子。
 
 ##### 4.2.1.3 创建并拉取git备份仓库
 拉取远程备份仓库，例如我这里创建的为`https://github.com/lureiny/test_blog`
@@ -218,11 +251,11 @@ screen是用来解决终端断开时进程自动终端的一个程序，因为�
 ```shell
     apt install screen
 ```
-screen简单入门参考：[菜鸟教程](9)
+screen简单入门参考：[菜鸟教程][9]
 
-##### 4.2.1.6 使用Simple-Hexo-Online-Manange-Tool
+##### 4.2.1.6 使用Simple-Hexo-Online-Manage-Tool
 ```shell 
-    cd /home && git clone git@github.com:lureiny/Simple-Hexo-Online-Manange-Tool.git "shomt" && cd shomt
+    cd /home && git clone git@github.com:lureiny/Simple-Hexo-Online-Manage-Tool.git "shomt" && cd shomt
     # 修改配置文件
     vim config.json
 ```
@@ -248,7 +281,7 @@ screen简单入门参考：[菜鸟教程](9)
     cd /home/blog/ 
     hexo server -s
     # 退出当前screen ctrl+A+D
-    # 启动Simple-Hexo-Online-Manange-Tool进程
+    # 启动Simple-Hexo-Online-Manage-Tool进程
     screen -S shomt
     cd /home/shomt
     python3 hexo.py
@@ -278,17 +311,17 @@ screen简单入门参考：[菜鸟教程](9)
 ```shell
     cd /home
     git clone {备份仓库远程地址，一定要使用`ssh`的地址} "blog_bak"
-    git clone git@github.com:lureiny/Simple-Hexo-Online-Manange-Tool.git "shomt"
+    git clone git@github.com:lureiny/Simple-Hexo-Online-Manage-Tool.git "shomt"
     mkdir /home/blog                               # 如果是新的blog才需要创建这个目录，如果已经有hexo init初始化后的blog目录，则跳过此步
 ```
 
 ##### 4.2.2.3 配置docker
-这里给出的是基于ubuntu16.04的安装命令，其他操作系统可以参考：[官方文档](10)
+这里给出的是基于ubuntu16.04的安装命令，其他操作系统可以参考：[官方文档][10]
 ```shell
     sudo apt-get update
     sudo apt-get install docker-ce docker-ce-cli containerd.io
 ```
-因为这里要使用到`docker-compose`命令，因此还需要安装`docker-compose`：[官方文档](11)
+因为这里要使用到`docker-compose`命令，因此还需要安装`docker-compose`：[官方文档][11]
 
 > 这里下载的速度可能会有一些慢，可以本地下载文件之后上传到/usr/local/bin目录下
 
@@ -325,7 +358,7 @@ docker-compse的配置文件在`shomt/docker`目录下，可以按照注释说�
 ```
 
 ##### 4.2.2.5 修改shomt配置文件
-参考[3. 配置文件](#3-配置文件)和[4.2.1.6 使用Simple-Hexo-Online-Manange-Tool](#4216-使用Simple-Hexo-Online-Manange-Tool)
+参考[3. 配置文件](#3-配置文件)和[4.2.1.6 使用Simple-Hexo-Online-Manage-Tool](#4216-使用simple-hexo-online-manage-tool)
 
 ##### 4.2.2.6 启动docker
 ```shell
@@ -339,7 +372,7 @@ docker-compse的配置文件在`shomt/docker`目录下，可以按照注释说�
 
 ##### 4.2.1.8 配置webhook
 在github备份项目页面（本例中: `https://github.com/lureiny/test_blog`），webhook设置在`Settings`->`Webhooks`->`Add webhook`。
-在`Payload URL`中填入回调链接：`http(s)://{host}:5000/webhook`，`Content type`选择`application/json`，`Secret`中填入[配置文件](#3-配置文件)中`webhook_secret`对应的值。可[参考](12)中步骤一。
+在`Payload URL`中填入回调链接：`http(s)://{host}:5000/webhook`，`Content type`选择`application/json`，`Secret`中填入[配置文件](#3-配置文件)中`webhook_secret`对应的值。可[参考][12]中步骤一。
 
 ## 5. 扩展/自定义
 不同主题的`Front-matters`可能会略有不同。比如`ButterFly`主题与[Heox官方][4]默认主题相比，`Front-matters`中多了`top_img`和`cover_img`等，在[markdown.py](/markdown.py)中的`Markdown_File_ButterFly`类继承了`Markdown_File`类，并通过配置文件中`extends`来配置额外所需要的参数`{"img_path": "/img/background_img", "imgs_path": "/home/blog/themes/Butterfly/source/img/background_img"}`，重写了`_generate_front_matter`方法，该方法主要功能就是生成默认`Front-matters`信息。通过这种形式，实现自定义，按照自己的需求来重新设计文件默认`Front-matters`格式。
