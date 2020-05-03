@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  hexo:
+    build: ./
+    ports:
+      - "4000:4000"
+      - "5000:5000"
+    tty: true
+    command: /bin/sh /root/start.sh
+    container_name: hexo 
+    environment:
+      - GIT_CONFIG_EMAIL=""
+      - GIT_CONFIG_NAME=""
+      - HEXO_BLOG=/home/blog
+      - SHOMT=/home/shomt
+    volumes:
+      - /root/.ssh:/root/.ssh:ro
+      - /home:/home
+      - /etc/localtime:/etc/localtime:ro
+      - ./start.sh:/root/start.sh
