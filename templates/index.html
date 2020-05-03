@@ -102,7 +102,7 @@
             }
           },
           error: function (data) {
-            msg("无效的token");
+            msg("服务器错误");
           }
         });
       }
@@ -126,7 +126,7 @@
             }
           },
           error: function (data) {
-            console.log(data);
+            msg("服务器错误");
           }
         });
       }
@@ -149,7 +149,6 @@
 
 
     function del(filename) {
-        var formData = new FormData($("#uploadForm")[0]);
         $.ajax({
           url: '/delete',
           type: 'POST',
@@ -168,10 +167,30 @@
             }
           },
           error: function (data) {
-            console.log(data);
+            msg("服务器错误");
           }
         });
       }
+
+      function flush_g() {
+        $.ajax({
+          url: '/flush',
+          type: 'POST',
+          dataType: "json",
+          data: JSON.stringify({
+            "token": document.getElementById("token").value
+          }),
+          contentType: 'application/json; charset=UTF-8',
+          processData: false,
+          success: function (data) {
+            msg(data.msg);
+          },
+          error: function (data) {
+            msg("服务器错误");
+          }
+        });
+      }
+      
 
       function msg(msg){
 			wcPop({
@@ -182,6 +201,12 @@
 				time: 2
 			});
 		}
+
+    $(document).keydown(function(event){
+      if(event.keyCode == 13){ 
+        document.getElementById("display").onclick(); 
+      }
+    });
     </script>
 </head>
 
@@ -192,10 +217,12 @@
     <input id="file" type="file" name="file" accept=".md,.markdown"/>
     <button id="upload" type="button" onclick="doUpload()">上传文件</button>
     <button id="display" type="button" onclick="getfiles()">显示文件列表</button>
+    <button id="flush" type="button" onclick="flush_g()">生成静态文件</button>
     token:<input id="token" type="password" name="token" value=""></input>
     {% if blog %}
     <a href={{blog}}>Blog</a>
     {% endif %}
+    <input type="text" class="form-control" style="display:none">
   </form>
 
   <form id="download" method="POST" style="display:none" action="/download"  target="_blank">

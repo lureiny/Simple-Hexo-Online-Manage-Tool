@@ -206,5 +206,22 @@ def delete():
     return status
 
 
+@app.route("/flush", methods=["POST"])
+def flush():
+    data = request.get_json()
+    status = {"status": "Error", "msg": "未知错误"}
+    if data is None:
+        status["msg"] = "参数错误"
+    elif {"token", }.difference(set(data.keys())):
+        status["msg"] = "缺少以下参数：{}".format(", ".join({"token", }.difference(set(data.keys()))))
+    elif not token_verify(data["token"]):
+        status["msg"] = "无效token"
+    else:
+        threading.Thread(target=deploy, args=()).start()
+        status["status"] = "Success"
+        status["msg"] = "重新生成静态文件中，请稍后刷新Blog页面"
+    return status
+
+
 request_logger.info("[{}]: 程序启动".format(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))))
 app.run(host=BIND, port=PORT)
