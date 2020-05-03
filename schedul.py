@@ -1,7 +1,7 @@
 from git import Git
 from hashlib import md5
 import shutil
-import os
+import os, sys
 import pathlib
 import threading
 from markdown import Markdown_File
