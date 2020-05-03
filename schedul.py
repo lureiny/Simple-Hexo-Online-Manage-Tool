@@ -92,14 +92,22 @@ class Schedule:
             self.__cp_file(files_to_cp=file_to_push_list)
             add_files = {x[0] for x in file_to_push_list}
             del_files = {x[1] for x in file_to_push_list}
-            if git.push(add_files | del_files) is None:
-                logger.info("git无文件更新，舍弃本次push")
+            threading.Thread(target=self.__push, kwargs={"git": git, "files_to_push": (add_files | del_files)}).start()
 
     def __filename_format(self, file_name: str):
         """
         格式化文件名
         """
         return re.sub(r"\.(md|markdown)$", "", file_name).split(" ")
+
+    def __push(self, git: Git, files_to_push):
+        """
+        异步更新到git远程仓库
+        """
+        if git.push(files_to_push) is None:
+            logger.info("git无文件更新，舍弃本次push")
+        else:
+            logger.info("文件\"{}\"更新到github".format(", ".join(files_to_push)))
 
     # 通过网络接口上传文件的同步，同步到git
     def __upload_schedul(self, file_name: str, data: str):
@@ -119,14 +127,11 @@ class Schedule:
             git_file_md5 = self.__calc_md5(self.local_git_path / file_name)
         if git_file_md5 and git_file_md5 == post_file_md5:
             logger.info("本次通过网络接口上传的文件已经存在且版本相同，不需要更新")
-            git.push([file_name, ])
+            threading.Thread(target=self.__push, kwargs={"git": git, "files_to_push": [file_name, ]}).start()
             return
         logger.info("开始复制文件\"{}\"到git_path".format(file_name))
         self.__cp_file_once([file_name, ])
-        if git.push([file_name, ]) is None:
-            logger.info("git无文件更新，舍弃本次push")
-        else:
-            logger.info("文件\"{}\"更新到github".format(file_name))
+        threading.Thread(target=self.__push, kwargs={"git": git, "files_to_push": [file_name, ]}).start()
         return True
 
     # 开始执行任务

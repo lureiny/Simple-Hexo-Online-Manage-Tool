@@ -3,6 +3,7 @@ import os, sys
 import re
 import time
 from git import Git
+import threading
 
 class Manage:
     def __init__(self, path: pathlib.Path):
@@ -37,7 +38,7 @@ class Manage:
 
     def del_file(self, filename: str, local_git_path: pathlib.Path):
         git = Git(local_git_path)
-        info = [True, "删除成功成功"]
+        info = [True, "删除成功"]
         if git.pull() is False:
             info[0] = False
             info[1] = "Pull出现错误"
@@ -51,6 +52,6 @@ class Manage:
         else:
             info[0] = False
             info[1] = "文件不存在，请刷新文件列表"
-        git.push([filename, ])
+        threading.Thread(target=git.push, args=([filename, ], )).start()
         return info
 
