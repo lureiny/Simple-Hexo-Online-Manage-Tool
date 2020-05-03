@@ -83,7 +83,7 @@ class Schedule:
                 with open(self.local_git_path / new_md5[new], "r", encoding="utf-8") as file:
                     new_data = file.read()
                 md_file = self.markdown_file_class(filename=new_md5[new], post_path=self.post_path, data=new_data, front_matters=self.front_matters, **self.extends)
-                if md_file.check() is False:
+                if md_file.check() is not True:
                     continue
                 if md_file.upgrade() is False:
                     continue
@@ -112,8 +112,12 @@ class Schedule:
     # 通过网络接口上传文件的同步，同步到git
     def __upload_schedul(self, file_name: str, data: str):
         md_file = self.markdown_file_class(filename=file_name, post_path=self.post_path, data=data, front_matters=self.front_matters, **self.extends)
-        if md_file.check() is False:
+        c = md_file.check()
+        if c is False:
             return False
+        elif c is None:
+            logger.info("{}已存在相同版本：重复上传".format(file_name))
+            return True
         if md_file.upgrade() is False:
             return False
         threading.Thread(target=self.__deploy, args=()).start()

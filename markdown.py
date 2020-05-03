@@ -30,15 +30,18 @@ class Markdown_File:
         self.new_file_heads = dict()
         self.new_file_bodys = list()
         self.old_file_heads = dict()
+        self.old_file_bodys = list()
         
 
     def check(self) -> bool:
         try:
             if self._updated:
-                self.old_file_heads = self._parse_file(self._read_file(self.post_path / self.filename))[0]
+                self.old_file_heads, self.old_file_bodys = self._parse_file(self._read_file(self.post_path / self.filename))
             else:
                 self.old_file_heads = self._generate_front_matter()
             self.new_file_heads, self.new_file_bodys = self._parse_file(self.new_file_data)
+            if self.old_file_bodys == self.new_file_bodys:
+                return None
             self._merge_head()
             return True
         except Exception as error:
