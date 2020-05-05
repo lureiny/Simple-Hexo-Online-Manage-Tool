@@ -26,7 +26,7 @@ class Markdown_File:
         self.post_path = kwargs["post_path"]
         self.front_matters = kwargs["front_matters"]
         self._updated = self._file_exist()
-        self.front_matters_compile = re.compile(r"^({}) *".format("|".join(self.front_matters)))
+        self.front_matters_compile = re.compile(r"^([#]? *(?:{})) *".format("|".join(self.front_matters)))
         self.new_file_heads = dict()
         self.new_file_bodys = list()
         self.old_file_heads = dict()
@@ -91,12 +91,14 @@ class Markdown_File:
                 head = re.sub(r"^ *", "", head)
                 matched = re.match(self.front_matters_compile, head)
                 if matched:
-                    key = matched.group(1)
-                    head = re.split(r"^(?:{}) *[:：] *".format("|".join(self.front_matters)), head)[1:]
+                    key = re.sub(r"^ *", "", matched.group(1))
+                    head = re.sub(r"^{}".format(key), "", head)
+                    head = re.split(r"^.*?[:：] *", head)[1:]
                     if head[0]:
                         heads[key].append(head[0])
-                else:
+                elif head[0] == "-":
                     heads[key].append(head)
+                    heads[key].append("")
             return list([heads, filedatas[filedatas[1:].index("---")+2:]])
 
     def _generate_front_matter(self):
@@ -127,7 +129,12 @@ class Markdown_File:
         """
         if "date" in self.new_file_heads and "date" in self.old_file_heads:
             del self.new_file_heads["date"]
-        self.old_file_heads.update(self.new_file_heads)
+        for key in self.new_file_heads.keys():
+            key = re.sub(r"^ *", "", key)
+            if key[0] == "#" and re.sub(r"^# *", "", key) in self.old_file_heads:
+                del self.old_file_heads[re.sub(r"^# *", "", key)]
+            else:
+                self.old_file_heads[key] = self.new_file_heads[key]
         self.new_file_heads = self.old_file_heads
 
     def _save_file(self):
@@ -142,6 +149,7 @@ class Markdown_File:
                 if len(self.new_file_heads[head]) > 1:
                     file.write("\n")
                     for subhead in self.new_file_heads[head]:
+                        if subhead:
                             file.write("  {}\n".format(subhead))
                 else:
                     file.write("".join(self.new_file_heads[head]))
