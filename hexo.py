@@ -12,6 +12,10 @@ import time
 from hashlib import md5
 from manage import Manage
 import sys
+import importlib
+
+
+WEBHOOK = importlib.import_module("webhook")
 
 # 允许的文件后缀
 ALLOWED_EXTENSIONS = {'md', 'markdown'}
@@ -42,6 +46,7 @@ with open("config.json", encoding="utf-8") as file:
     BIND = data["bind"]
     PORT = data["port"]
     BLOG_URL = data["blog_url"]
+    GIT = data["git"] if data["git"] in ["gitee", "github"] else "github"
 
 
 # flask请求日志
@@ -98,74 +103,73 @@ def index():
 @app.route("/upload", methods=["POST"])
 def upload():
     status = {"status": "Error", "msg": "文件上传出现错误"}
+    status_code = 400
     token = request.form.get("token")
     if not token_verify(token):
         status["msg"] = "无效token！"
-        return  jsonify(status)
+        status_code = 401
+        return  jsonify(status), status_code
     try:
         if 'file' not in request.files:
-            return jsonify(status)
+            return jsonify(status), status_code
         file = request.files['file']
         if file.filename == "":
-            return jsonify(status)
+            return jsonify(status), status_code
         data = request.get_json()
         file.filename = re.sub(r"\"*$", "", file.filename)
         if file and allowed_file(file.filename):
             schedul = Schedule(local_git_path=LOCAL_GIT_PATH, remote_git=REMOTE_GIT, auto_git=AUTO_GIT, post_path=POST_PATH, front_matters=FRONT_MATTERS, deploy_cmd=DEPLOY_CMD, timer=TIMER, extends=EXTENDS, markdown_file_class=MARKDOWN_FILE_CLASS)
             if schedul.upload_schedul(file_name=file.filename, data=file.read().decode("utf-8")) is False:
-                return jsonify(status)
+                return jsonify(status), status_code
             status["f"] = file.filename
             status["msg"] = "文件上传成功：{}".format(file.filename)
             status["status"] = "Success"
-            return jsonify(status)
+            status_code = 200
+            return jsonify(status), status_code
         status["msg"] = "不支持的文件格式: {}".format(file.filename)
-        return jsonify(status)
+        return jsonify(status), status_code
     except Exception as error:
         logger.error("Flask主程序出现问题：{}".format(str(error)))
         exc_type, exc_value, exc_tb = sys.exc_info()
         format_tb_info = traceback.format_exception()
         logger.error("{} {}".format(format_tb_info[-2].replace("\n"), format_tb_info[-1].replace("\n")))
-        return jsonify(status)
+        status_code = 500
+        return jsonify(status), status_code 
 
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
     if WEBHOOK_USED is False:
         return jsonify({"status": "Error", "message": "Not activated webhook"})
-    try:
-        signature = request.headers["X-Hub-Signature"]
-    except KeyError:
-        logger.info("非法访问，非github请求")
-        return jsonify({"status": "Error", "message": "Forbidden"})
-    if signature.split("=")[0] != "sha1":
-        logger.debug("不支持的hash算法: {}".format(signature.split("=")[0]))
-        return jsonify({"status": "Error", "message": "Unsupported hash algorithm"})
-    sha1_hex = hmac.new(key=WEBHOOK_SECRET.encode("utf-8"), msg=request.data, digestmod=hashlib.sha1).hexdigest()
-    if sha1_hex != signature.split("=")[1]:
-        logger.debug("数据校验失败")
-        return jsonify({"status": "Error", "message": "Forbidden"})
-    logger.info("有新的push请求")
-    schedul = Schedule(local_git_path=LOCAL_GIT_PATH, remote_git=REMOTE_GIT, auto_git=AUTO_GIT, post_path=POST_PATH, front_matters=FRONT_MATTERS, deploy_cmd=DEPLOY_CMD, timer=TIMER, extends=EXTENDS, markdown_file_class=MARKDOWN_FILE_CLASS)
-    schedul.webhook()
-    return jsonify({"status": "Success", "message": "Success"})
+    git = getattr(WEBHOOK, GIT)
+    sign, status, status_code = git(request=request, key=WEBHOOK_SECRET)
+    if sign:
+        logger.info("有新的push请求")
+        schedul = Schedule(local_git_path=LOCAL_GIT_PATH, remote_git=REMOTE_GIT, auto_git=AUTO_GIT, post_path=POST_PATH, front_matters=FRONT_MATTERS, deploy_cmd=DEPLOY_CMD, timer=TIMER, extends=EXTENDS, markdown_file_class=MARKDOWN_FILE_CLASS)
+        schedul.webhook()
+        return jsonify(status), status_code
+    return jsonify(status), status_code
 
 
 @app.route("/getfiles", methods=["POST"])
 def get_files():
     data = request.get_json()
     status = {"status": "Error", "files": [], "msg": "未知错误"}
+    status_code = 500
     if data and token_verify(data["token"]):
         status["status"] = "Success"
+        status_code = 200
         m = Manage(POST_PATH)
         status["files"] = m.all_file_info()
         del status["msg"]
-        return jsonify(status)
-    return jsonify(status)
+        return jsonify(status), status_code
+    return jsonify(status), status_code
 
 
 @app.route("/download", methods=["POST"])
 def download():
     status = {"status": "Error", "msg": "未知错误"}
+    status_code = 500
     data = dict(request.form)
     try:
         data["filename"] = data["filename"][0] if type(data["filename"]) == list else data["filename"]
@@ -176,25 +180,32 @@ def download():
         format_tb_info = traceback.format_exception()
         logger.error("{} {}".format(format_tb_info[-2].replace("\n"), format_tb_info[-1].replace("\n")))
         status["msg"] = "参数错误"
+        status_code = 400
     if not (POST_PATH / data["filename"]).exists():
         status["msg"] = "文件不存在，请刷新文件列表"
+        status_code = 404
     elif not token_verify(data["token"]):
         status["msg"] = "无效token"
+        status_code = 401
     else:
         return send_from_directory(POST_PATH, filename=data["filename"], as_attachment=True)
-    return jsonify(status)
+    return jsonify(status), status_code
     
 
 @app.route('/delete', methods=["POST"])
 def delete():
     data = request.get_json()
     status = {"status": "Error", "msg": "未知错误"}
+    status_code = 500
     if data is None:
         status["msg"] = "参数错误"
+        status_code = 400
     elif {"token", "filename"}.difference(set(data.keys())):
         status["msg"] = "缺少以下参数：{}".format(", ".join({"token", "filename"}.difference(set(data.keys()))))
+        status_code = 400
     elif not token_verify(data["token"]):
         status["msg"] = "无效token"
+        status_code = 401
     else:
         m = Manage(POST_PATH)
         s, msg = m.del_file(filename=data["filename"], local_git_path=LOCAL_GIT_PATH)
@@ -202,25 +213,31 @@ def delete():
         if s:
             status["status"] = "Success"
             status["msg"] = msg
+            status_code = 200
     logger.info(status["msg"])
-    return status
+    return jsonify(status), status_code
 
 
 @app.route("/flush", methods=["POST"])
 def flush():
     data = request.get_json()
     status = {"status": "Error", "msg": "未知错误"}
+    status_code = 500
     if data is None:
         status["msg"] = "参数错误"
+        status_code = 400
     elif {"token", }.difference(set(data.keys())):
         status["msg"] = "缺少以下参数：{}".format(", ".join({"token", }.difference(set(data.keys()))))
+        status_code = 400
     elif not token_verify(data["token"]):
         status["msg"] = "无效token"
+        status_code = 400
     else:
         threading.Thread(target=deploy, args=()).start()
         status["status"] = "Success"
         status["msg"] = "重新生成静态文件中，请稍后刷新Blog页面"
-    return status
+        status_code = 200
+    return jsonify(status), status_code
 
 
 request_logger.info("[{}]: 程序启动".format(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))))

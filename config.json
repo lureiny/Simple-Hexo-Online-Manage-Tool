@@ -16,5 +16,6 @@
     "token": "pwd",
     "bind": "0.0.0.0",
     "port": 5000,
-    "blog_url": ""
+    "blog_url": "",
+    "git": "github"
  }
