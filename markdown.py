@@ -131,8 +131,9 @@ class Markdown_File:
             del self.new_file_heads["date"]
         for key in self.new_file_heads.keys():
             key = re.sub(r"^ *", "", key)
-            if key[0] == "#" and re.sub(r"^# *", "", key) in self.old_file_heads:
-                del self.old_file_heads[re.sub(r"^# *", "", key)]
+            if key[0] == "#":
+                if re.sub(r"^# *", "", key) in self.old_file_heads:
+                    del self.old_file_heads[re.sub(r"^# *", "", key)]
             else:
                 self.old_file_heads[key] = self.new_file_heads[key]
         self.new_file_heads = self.old_file_heads
