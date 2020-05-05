@@ -427,6 +427,8 @@ docker-compse的配置文件在`shomt/docker`目录下，可以按照注释说�
 #### 4.4.2 更新
 `git pull`拉取最新的版本后，`编辑`->`commit`->`push`即可。
 
+> 更新`Front-matter`时，新增的`Front-matter`仅需要直接添加即可，对于需要删除的项，在标签前面加上`#`后上传即可
+
 #### 4.4.3 删除
 `git pull`拉取最新的版本后，`删除文件`->`commit`->`push`即可。
 
@@ -447,3 +449,5 @@ docker-compse的配置文件在`shomt/docker`目录下，可以按照注释说�
 [10]: https://docs.docker.com/engine/install/ubuntu/           "Docker Engine"
 [11]: https://docs.docker.com/compose/install/            "docker-compose"
 [12]: https://www.jianshu.com/p/55209f1031e8              "webhook参考"
+[13]: https://dash.lureiny.top/images/2020/05/04/ebec7926ee11d6709f90bc5a8fd2d462.png
+[14]: https://dash.lureiny.top/images/2020/05/04/5dba907ee1635017282d0367857cc0a2.png
