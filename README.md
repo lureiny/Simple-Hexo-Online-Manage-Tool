@@ -271,7 +271,7 @@
     # 这两部是创建并切换虚拟环境，如果机器上只有这么一个项目使用了python，那此步可以省略
     # conda create -n hexo python=3.6
     # conda activate hexo
-    pip install flask
+    pip install -i requestments.txt
 ```
 至此python环境搭建完
 

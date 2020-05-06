@@ -2,7 +2,7 @@ import pathlib
 import os, sys
 import re
 import time
-from git import Git
+from custom_git import Git
 import threading
 
 class Manage:
@@ -44,14 +44,11 @@ class Manage:
             info[1] = "Pull出现错误"
         if (local_git_path / filename).exists():
             os.remove(local_git_path / filename)
-        else:
-            info[0] = False
-            info[1] = "文件不存在，请刷新文件列表"
         if (self.path / filename).exists():
             os.remove(self.path / filename)
         else:
             info[0] = False
-            info[1] = "文件不存在，请刷新文件列表"
+            info[1] += "文件不存在，请刷新文件列表"
         threading.Thread(target=git.push, args=([filename, ], )).start()
         return info
 

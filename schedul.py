@@ -1,4 +1,4 @@
-from git import Git
+from custom_git import Git
 from hashlib import md5
 import shutil
 import os, sys
@@ -70,29 +70,29 @@ class Schedule:
 
     # 调度任务
     def __schedul(self):
-        git = Git(local_path=self.local_git_path, remote_git=self.remote_git)
-        if self.auto_git and git.pull() is None:
-            logger.info("remote_git无更新,放弃本次更新部署")
-        else:
-            old_md5 = self.__calc_md5s(self.post_path)
-            new_md5 = self.__calc_md5s(self.local_git_path)
-            self.__del_operate(set(old_md5.values()).difference(set(new_md5.values())))
-            old_md5 = self.__calc_md5s(self.post_path)
-            file_to_push_list = list()
-            for new in set(new_md5.keys()).difference(set(old_md5.keys())):
-                with open(self.local_git_path / new_md5[new], "r", encoding="utf-8") as file:
-                    new_data = file.read()
-                md_file = self.markdown_file_class(filename=new_md5[new], post_path=self.post_path, data=new_data, front_matters=self.front_matters, **self.extends)
-                if md_file.check() is not True:
-                    continue
-                if md_file.upgrade() is False:
-                    continue
-                file_to_push_list.append((md_file.filename, new_md5[new]))
-            threading.Thread(target=self.__deploy, args=()).start()
-            self.__cp_file(files_to_cp=file_to_push_list)
-            add_files = {x[0] for x in file_to_push_list}
-            del_files = {x[1] for x in file_to_push_list}
-            threading.Thread(target=self.__push, kwargs={"git": git, "files_to_push": (add_files | del_files)}).start()
+        git = Git(local_path=self.local_git_path)
+        # if self.auto_git and git.pull() is None:
+        #     logger.info("remote_git无更新,放弃本次更新部署")
+        # else:
+        old_md5 = self.__calc_md5s(self.post_path)
+        new_md5 = self.__calc_md5s(self.local_git_path)
+        self.__del_operate(set(old_md5.values()).difference(set(new_md5.values())))
+        old_md5 = self.__calc_md5s(self.post_path)
+        file_to_push_list = list()
+        for new in set(new_md5.keys()).difference(set(old_md5.keys())):
+            with open(self.local_git_path / new_md5[new], "r", encoding="utf-8") as file:
+                new_data = file.read()
+            md_file = self.markdown_file_class(filename=new_md5[new], post_path=self.post_path, data=new_data, front_matters=self.front_matters, **self.extends)
+            if md_file.check() is not True:
+                continue
+            if md_file.upgrade() is False:
+                continue
+            file_to_push_list.append((md_file.filename, new_md5[new]))
+        threading.Thread(target=self.__deploy, args=()).start()
+        self.__cp_file(files_to_cp=file_to_push_list)
+        add_files = {x[0] for x in file_to_push_list}
+        del_files = {x[1] for x in file_to_push_list}
+        threading.Thread(target=git.push, kwargs={"files_to_push": (add_files | del_files)}).start()
 
     def __filename_format(self, file_name: str):
         """
@@ -122,7 +122,7 @@ class Schedule:
             return False
         threading.Thread(target=self.__deploy, args=()).start()
         file_name = "_".join(self.__filename_format(file_name)) + ".md"
-        git = Git(local_path=self.local_git_path, remote_git=self.remote_git)
+        git = Git(local_path=self.local_git_path)
         git.pull()
         post_file_md5 = self.__calc_md5(self.post_path / file_name)
         git_file_md5 = None
@@ -131,11 +131,10 @@ class Schedule:
             git_file_md5 = self.__calc_md5(self.local_git_path / file_name)
         if git_file_md5 and git_file_md5 == post_file_md5:
             logger.info("本次通过网络接口上传的文件已经存在且版本相同，不需要更新")
-            threading.Thread(target=self.__push, kwargs={"git": git, "files_to_push": [file_name, ]}).start()
             return
         logger.info("开始复制文件\"{}\"到git_path".format(file_name))
         self.__cp_file_once([file_name, ])
-        threading.Thread(target=self.__push, kwargs={"git": git, "files_to_push": [file_name, ]}).start()
+        threading.Thread(target=git.push, kwargs={"files_to_push": [file_name, ]}).start()
         return True
 
     # 开始执行任务
