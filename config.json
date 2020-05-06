@@ -4,7 +4,6 @@
     "front_matters": ["date", "tags", "comments", "title", "categories", "layout", "updated", "permalink", "keywords"],
     "remote_git": "https://github.com",
     "local_git_path": "local_git_path",
-    "auto_git": true,
     "timer": 60.0,
     "webhook_used": true,
     "webhook_secret": "key",

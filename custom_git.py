@@ -41,7 +41,7 @@ class Git:
                 self.index.add(list(files_to_push))
                 self.index.commit(self.__message)
                 self.remote.push()
-                logger.info("{}更新到远程仓库".format(self.__message))
+                logger.info("文件\"{}\"更新到远程仓库".format(self.__message))
                 return True
             logger.info("本地git版本为最新版本")
         except Exception as error:

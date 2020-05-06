@@ -180,7 +180,6 @@
     "front_matters": ["date", "tags", "comments", "title", "categories", "layout", "updated", "permalink", "keywords"],
     "remote_git": "https://github.com",
     "local_git_path": "local_git_path",
-    "auto_git": true,
     "timer": 60.0,
     "webhook_used": true,
     "webhook_secret": "key",
@@ -204,7 +203,6 @@
 | front_matters | hexo文件头部信息列表，详见[官网][5] | `list` | 默认值如上所示  |
 | remote_git | git库地址 | `str` | 需要用户配置 |
 | local_git_path | git clone后本地git目录，使用git clone时需要使用ssh的链接，否则会无法push | str | 需要用户配置 |
-| auto_git | 是否自动进行git操作，建议使用默认值 | `bool` | `true` |
 | timer | 不使用github回调的方式就会定时执行git操作来检查是否有文件更新 | `float` | `60.0` |
 | webhook_used | 是否使用github回调 | `bool` | `true` |
 | webhook_secret | 使用github回调的方法时，在github上设置的密钥 | `str` | 需要用户配置 |

@@ -16,12 +16,11 @@ system_logger = logging.getLogger("system_hexo")
 
 class Schedule:
     def __init__(self, extends=dict({}), **kwargs):
-        if {'auto_git', 'deploy_cmd', 'front_matters', 'local_git_path', 'post_path', 'remote_git', 'timer', 'markdown_file_class'}.difference(set(kwargs.keys())):
-            raise KeyError("缺少以下参数: '{}'".format(", ".join({'auto_git', 'deploy_cmd', 'front_matters', 'local_git_path', 'post_path', 'remote_git', 'timer', 'markdown_file_class'}.difference(set(kwargs.keys())))))
+        if {'deploy_cmd', 'front_matters', 'local_git_path', 'post_path', 'remote_git', 'timer', 'markdown_file_class'}.difference(set(kwargs.keys())):
+            raise KeyError("缺少以下参数: '{}'".format(", ".join({'deploy_cmd', 'front_matters', 'local_git_path', 'post_path', 'remote_git', 'timer', 'markdown_file_class'}.difference(set(kwargs.keys())))))
         self.extends = extends
         self.local_git_path = kwargs["local_git_path"]
         self.remote_git = kwargs["remote_git"]
-        self.auto_git = kwargs["auto_git"] 
         self.post_path = kwargs["post_path"]
         self.front_matters = kwargs["front_matters"]
         self.deploy_cmd = kwargs["deploy_cmd"]
@@ -45,10 +44,11 @@ class Schedule:
 
     # 更新删除处理
     def __del_operate(self, file_to_del: set):
-        logger.info("删除文件：{}".format("、".join(file_to_del)))
-        for f in file_to_del:
-            if (self.post_path / f).exists():
-                os.remove(self.post_path / f)
+        if file_to_del:
+            logger.info("删除文件：{}".format("、".join(file_to_del)))
+            for f in file_to_del:
+                if (self.post_path / f).exists():
+                    os.remove(self.post_path / f)
 
     # 更新或者新增加的文件处理后增加到hexo目录后需要重新上传到github上
     def __cp_file(self, files_to_cp: list):
@@ -71,9 +71,7 @@ class Schedule:
     # 调度任务
     def __schedul(self):
         git = Git(local_path=self.local_git_path)
-        # if self.auto_git and git.pull() is None:
-        #     logger.info("remote_git无更新,放弃本次更新部署")
-        # else:
+        git.pull()
         old_md5 = self.__calc_md5s(self.post_path)
         new_md5 = self.__calc_md5s(self.local_git_path)
         self.__del_operate(set(old_md5.values()).difference(set(new_md5.values())))

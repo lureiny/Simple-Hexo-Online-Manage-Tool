@@ -32,8 +32,6 @@ with open("config.json", encoding="utf-8") as file:
     FRONT_MATTERS = set(data["front_matters"])
     LOCAL_GIT_PATH = pathlib.Path(data["local_git_path"])
     REMOTE_GIT = data["remote_git"]
-    # 标记是否自动运行，如果true，则此时当git pull无更新时自动舍弃本次更新
-    AUTO_GIT = data["auto_git"]
     TIMER = data["timer"]
     WEBHOOK_USED = data["webhook_used"]
     WEBHOOK_SECRET = data["webhook_secret"]
@@ -76,7 +74,7 @@ system_logger.addHandler(system_logger_handler)
 
 if WEBHOOK_USED is False:
     logger.info("执行定时调度任务")
-    s = Schedule(local_git_path=LOCAL_GIT_PATH, remote_git=REMOTE_GIT, auto_git=AUTO_GIT, post_path=POST_PATH, front_matters=FRONT_MATTER, deploy_cmd=DEPLOY_CMD, timer=TIMER, extends=EXTENDS, markdown_file_class=MARKDOWN_FILE_CLASS)
+    s = Schedule(local_git_path=LOCAL_GIT_PATH, remote_git=REMOTE_GIT, post_path=POST_PATH, front_matters=FRONT_MATTER, deploy_cmd=DEPLOY_CMD, timer=TIMER, extends=EXTENDS, markdown_file_class=MARKDOWN_FILE_CLASS)
     s.schedul_start()
 
 
@@ -118,7 +116,7 @@ def upload():
         data = request.get_json()
         file.filename = re.sub(r"\"*$", "", file.filename)
         if file and allowed_file(file.filename):
-            schedul = Schedule(local_git_path=LOCAL_GIT_PATH, remote_git=REMOTE_GIT, auto_git=AUTO_GIT, post_path=POST_PATH, front_matters=FRONT_MATTERS, deploy_cmd=DEPLOY_CMD, timer=TIMER, extends=EXTENDS, markdown_file_class=MARKDOWN_FILE_CLASS)
+            schedul = Schedule(local_git_path=LOCAL_GIT_PATH, remote_git=REMOTE_GIT, post_path=POST_PATH, front_matters=FRONT_MATTERS, deploy_cmd=DEPLOY_CMD, timer=TIMER, extends=EXTENDS, markdown_file_class=MARKDOWN_FILE_CLASS)
             if schedul.upload_schedul(file_name=file.filename, data=file.read().decode("utf-8")) is False:
                 return jsonify(status), status_code
             status["f"] = file.filename
@@ -145,7 +143,7 @@ def webhook():
     sign, status, status_code = git(request=request, key=WEBHOOK_SECRET)
     if sign:
         logger.info("有新的push请求")
-        schedul = Schedule(local_git_path=LOCAL_GIT_PATH, remote_git=REMOTE_GIT, auto_git=AUTO_GIT, post_path=POST_PATH, front_matters=FRONT_MATTERS, deploy_cmd=DEPLOY_CMD, timer=TIMER, extends=EXTENDS, markdown_file_class=MARKDOWN_FILE_CLASS)
+        schedul = Schedule(local_git_path=LOCAL_GIT_PATH, remote_git=REMOTE_GIT, post_path=POST_PATH, front_matters=FRONT_MATTERS, deploy_cmd=DEPLOY_CMD, timer=TIMER, extends=EXTENDS, markdown_file_class=MARKDOWN_FILE_CLASS)
         schedul.webhook()
         return jsonify(status), status_code
     return jsonify(status), status_code
