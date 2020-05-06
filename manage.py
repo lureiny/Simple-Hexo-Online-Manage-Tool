@@ -43,12 +43,13 @@ class Manage:
             info[0] = False
             info[1] = "Pull出现错误"
         if (local_git_path / filename).exists():
+            git.files_to_del.add(filename)
             os.remove(local_git_path / filename)
         if (self.path / filename).exists():
             os.remove(self.path / filename)
         else:
             info[0] = False
             info[1] += "文件不存在，请刷新文件列表"
-        threading.Thread(target=git.push, args=([filename, ], )).start()
+        threading.Thread(target=git.push).start()
         return info
 

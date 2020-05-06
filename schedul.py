@@ -43,11 +43,12 @@ class Schedule:
             return md5(file.read()).hexdigest()
 
     # 更新删除处理
-    def __del_operate(self, file_to_del: set):
+    def __del_operate(self, file_to_del: set, git:Git):
         if file_to_del:
             logger.info("删除文件：{}".format("、".join(file_to_del)))
             for f in file_to_del:
                 if (self.post_path / f).exists():
+                    git.files_to_del.add(f)
                     os.remove(self.post_path / f)
 
     # 更新或者新增加的文件处理后增加到hexo目录后需要重新上传到github上
@@ -56,7 +57,7 @@ class Schedule:
             os.remove(self.local_git_path / f[1])
             shutil.copy2(self.post_path / f[0], self.local_git_path / f[0])
 
-    # 单次调度版删除
+    # 单次调度版复制
     def __cp_file_once(self, files_to_cp: list):
         for f in files_to_cp:
             shutil.copy2(self.post_path / f, self.local_git_path / f)
@@ -74,7 +75,7 @@ class Schedule:
         git.pull()
         old_md5 = self.__calc_md5s(self.post_path)
         new_md5 = self.__calc_md5s(self.local_git_path)
-        self.__del_operate(set(old_md5.values()).difference(set(new_md5.values())))
+        self.__del_operate(set(old_md5.values()).difference(set(new_md5.values())), git=git)
         old_md5 = self.__calc_md5s(self.post_path)
         file_to_push_list = list()
         for new in set(new_md5.keys()).difference(set(old_md5.keys())):
@@ -90,7 +91,9 @@ class Schedule:
         self.__cp_file(files_to_cp=file_to_push_list)
         add_files = {x[0] for x in file_to_push_list}
         del_files = {x[1] for x in file_to_push_list}
-        threading.Thread(target=git.push, kwargs={"files_to_push": (add_files | del_files)}).start()
+        git.files_to_del.update(del_files)
+        git.files_to_add_or_modified.update(add_files)
+        threading.Thread(target=git.push).start()
 
     def __filename_format(self, file_name: str):
         """
@@ -132,7 +135,8 @@ class Schedule:
             return
         logger.info("开始复制文件\"{}\"到git_path".format(file_name))
         self.__cp_file_once([file_name, ])
-        threading.Thread(target=git.push, kwargs={"files_to_push": [file_name, ]}).start()
+        git.files_to_add_or_modified.add(file_name)
+        threading.Thread(target=git.push).start()
         return True
 
     # 开始执行任务

@@ -17,6 +17,8 @@ class Git:
         self.repo = Repo(local_path)
         self.index = self.repo.index
         self.remote = self.repo.remote()
+        self.files_to_del = set()
+        self.files_to_add_or_modified = set()
 
     def pull(self):
         """
@@ -31,17 +33,21 @@ class Git:
             logger.error("{} {}".format(format_tb_info[-2].replace("\n"), format_tb_info[-1].replace("\n")))
             return False
 
-    def push(self, files_to_push):
+    def push(self):
         """
         推送更新
         """
         try:
-            if files_to_push:
-                self.__message = ", ".join(files_to_push)
-                self.index.add(list(files_to_push))
+            if self.files_to_add_or_modified | self.files_to_del:
+                if self.files_to_del:
+                    self.__message += "删除文件：\n{}\n".format("\n".join(self.files_to_del))
+                    self.index.remove(list(self.files_to_del))
+                if self.files_to_add_or_modified:
+                    self.__message += "新增或更新的文件：\n{}\n".format("\n".join(self.files_to_add_or_modified))
+                    self.index.add(list(self.files_to_add_or_modified))    
                 self.index.commit(self.__message)
                 self.remote.push()
-                logger.info("文件\"{}\"更新到远程仓库".format(self.__message))
+                logger.info("提交信息:{}\n".format(self.__message))
                 return True
             logger.info("本地git版本为最新版本")
         except Exception as error:
