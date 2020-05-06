@@ -65,9 +65,21 @@ class Schedule:
     def __deploy(self):
         logger.info("开始部署")
         result = os.popen(self.deploy_cmd)
+        # 等待部署完成
+        os.wait()
         result = result.buffer.read().decode("utf-8")
         system_logger.info(result)
         return result
+
+    def __schedul_sub(self, file_to_push_list: list, git:Git):
+        # 先完成deploy再复制
+        self.__deploy()
+        self.__cp_file(files_to_cp=file_to_push_list)
+        add_files = {x[0] for x in file_to_push_list}
+        del_files = {x[1] for x in file_to_push_list}
+        git.files_to_del.update(del_files)
+        git.files_to_add_or_modified.update(add_files)
+        git.push()
 
     # 调度任务
     def __schedul(self):
@@ -87,13 +99,7 @@ class Schedule:
             if md_file.upgrade() is False:
                 continue
             file_to_push_list.append((md_file.filename, new_md5[new]))
-        threading.Thread(target=self.__deploy, args=()).start()
-        self.__cp_file(files_to_cp=file_to_push_list)
-        add_files = {x[0] for x in file_to_push_list}
-        del_files = {x[1] for x in file_to_push_list}
-        git.files_to_del.update(del_files)
-        git.files_to_add_or_modified.update(add_files)
-        threading.Thread(target=git.push).start()
+        threading.Thread(target=self.__schedul_sub, kwargs={"file_to_push_list": file_to_push_list, "git": git}).start()
 
     def __filename_format(self, file_name: str):
         """
@@ -101,28 +107,8 @@ class Schedule:
         """
         return re.sub(r"\.(md|markdown)$", "", file_name).split(" ")
 
-    def __push(self, git: Git, files_to_push):
-        """
-        异步更新到git远程仓库
-        """
-        if git.push(files_to_push) is None:
-            logger.info("git无文件更新，舍弃本次push")
-        else:
-            logger.info("文件\"{}\"更新到github".format(", ".join(files_to_push)))
-
-    # 通过网络接口上传文件的同步，同步到git
-    def __upload_schedul(self, file_name: str, data: str):
-        md_file = self.markdown_file_class(filename=file_name, post_path=self.post_path, data=data, front_matters=self.front_matters, **self.extends)
-        c = md_file.check()
-        if c is False:
-            return False
-        elif c is None:
-            logger.info("{}已存在相同版本：重复上传".format(file_name))
-            return True
-        if md_file.upgrade() is False:
-            return False
-        threading.Thread(target=self.__deploy, args=()).start()
-        file_name = "_".join(self.__filename_format(file_name)) + ".md"
+    def __upload_schedul_sub(self, file_name: str):
+        self.__deploy()
         git = Git(local_path=self.local_git_path)
         git.pull()
         post_file_md5 = self.__calc_md5(self.post_path / file_name)
@@ -136,7 +122,21 @@ class Schedule:
         logger.info("开始复制文件\"{}\"到git_path".format(file_name))
         self.__cp_file_once([file_name, ])
         git.files_to_add_or_modified.add(file_name)
-        threading.Thread(target=git.push).start()
+        git.push()
+
+    # 通过网络接口上传文件的同步，同步到git
+    def __upload_schedul(self, file_name: str, data: str):
+        md_file = self.markdown_file_class(filename=file_name, post_path=self.post_path, data=data, front_matters=self.front_matters, **self.extends)
+        c = md_file.check()
+        if c is False:
+            return False
+        elif c is None:
+            logger.info("{}已存在相同版本：重复上传".format(file_name))
+            return True
+        if md_file.upgrade() is False:
+            return False
+        file_name = "_".join(self.__filename_format(file_name)) + ".md"
+        threading.Thread(target=self.__upload_schedul_sub, kwargs={"file_name": file_name}).start()
         return True
 
     # 开始执行任务
