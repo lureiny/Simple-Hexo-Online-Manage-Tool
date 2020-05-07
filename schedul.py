@@ -42,13 +42,13 @@ class Schedule:
         with open(file_path, "rb") as file:
             return md5(file.read()).hexdigest()
 
-    # 更新删除处理
+    # webhook删除处理
     def __del_operate(self, file_to_del: set, git:Git):
         if file_to_del:
             logger.info("删除文件：{}".format("、".join(file_to_del)))
             for f in file_to_del:
                 if (self.post_path / f).exists():
-                    git.files_to_del.add(f)
+                    # git.files_to_del.add(f)
                     os.remove(self.post_path / f)
 
     # 更新或者新增加的文件处理后增加到hexo目录后需要重新上传到github上
