@@ -146,13 +146,13 @@ class Markdown_File:
         with open(self.post_path / self.filename, "w", encoding="utf-8") as file:
             file.write("---\n")
             for head in self.new_file_heads:
-                file.write("{}: ".format(head))
                 if len(self.new_file_heads[head]) > 1:
-                    file.write("\n")
+                    file.write("{}:\n".format(head))
                     for subhead in self.new_file_heads[head]:
                         if subhead:
                             file.write("  {}\n".format(subhead))
                 else:
+                    file.write("{}: ".format(head))
                     file.write("".join(self.new_file_heads[head]))
                     file.write("\n")
             file.write("---\n")
